@@ -18,11 +18,12 @@ XLS_CONTENT_TYPE = 'application/vnd.ms-excel'
 
 
 def _converter_context():
-    datasets = Dataset.objects.order_by('-uploaded_at')
+    datasets = Dataset.objects.order_by('file_type', 'variant', '-uploaded_at')
     datasets_json = {
         str(d.id): {
-            'name': d.name,
-            'category': d.category,
+            'name': d.drive_file_name,
+            'file_type': d.file_type,
+            'variant': d.variant,
             'description': d.description,
         }
         for d in datasets

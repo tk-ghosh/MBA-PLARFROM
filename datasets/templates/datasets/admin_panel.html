@@ -8,16 +8,26 @@
     <div class="col-lg-5">
         <div class="panel-card">
             <h5 class="panel-card-title">Upload Dataset</h5>
-            <p class="panel-card-sub">Files upload straight to Google Drive — nothing is stored on the server.</p>
+            <p class="panel-card-sub">Files upload straight to Google Drive — nothing is stored on the server. The file's own name is used automatically.</p>
             <form method="post" enctype="multipart/form-data" action="{% url 'admin_panel' %}">
                 {% csrf_token %}
                 <div class="field">
-                    <label for="name">Name</label>
-                    <input type="text" id="name" name="name" placeholder="e.g. 2026 Q3 Rate Card" required>
+                    <label for="file_type">Type</label>
+                    <input type="text" id="file_type" name="file_type" placeholder="e.g. Plan, Monitor, Revised, BSL" required list="type-suggestions">
+                    <datalist id="type-suggestions">
+                        {% for t in existing_types %}
+                        <option value="{{ t }}">
+                        {% endfor %}
+                    </datalist>
                 </div>
                 <div class="field">
-                    <label for="category">Category</label>
-                    <input type="text" id="category" name="category" placeholder="e.g. Rate Card, Channel List, Brand List" required>
+                    <label for="variant">Variant</label>
+                    <input type="text" id="variant" name="variant" placeholder="e.g. Hair Oil, Cream" required list="variant-suggestions">
+                    <datalist id="variant-suggestions">
+                        {% for v in existing_variants %}
+                        <option value="{{ v }}">
+                        {% endfor %}
+                    </datalist>
                 </div>
                 <div class="field">
                     <label for="description">Description</label>
@@ -38,23 +48,31 @@
                 <table class="table table-data">
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Category</th>
+                            <th>File name</th>
+                            <th>Type</th>
+                            <th>Variant</th>
                             <th>Uploaded by</th>
                             <th>Uploaded at</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for dataset in datasets %}
-                        <tr>
-                            <td>{{ dataset.name }}</td>
-                            <td>{{ dataset.category }}</td>
-                            <td>{{ dataset.uploaded_by.get_username|default:"&mdash;" }}</td>
-                            <td>{{ dataset.uploaded_at|date:"M j, Y, g:i a" }}</td>
-                        </tr>
+                        {% regroup datasets by file_type as type_groups %}
+                        {% for type_group in type_groups %}
+                            {% regroup type_group.list by variant as variant_groups %}
+                            {% for variant_group in variant_groups %}
+                                {% for dataset in variant_group.list %}
+                                <tr>
+                                    <td>{{ dataset.drive_file_name }}</td>
+                                    <td>{{ dataset.file_type }}</td>
+                                    <td>{{ dataset.variant }}</td>
+                                    <td>{{ dataset.uploaded_by.get_username|default:"&mdash;" }}</td>
+                                    <td>{{ dataset.uploaded_at|date:"M j, Y, g:i a" }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% endfor %}
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="empty-state">No datasets uploaded yet.</td>
+                            <td colspan="5" class="empty-state">No datasets uploaded yet.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

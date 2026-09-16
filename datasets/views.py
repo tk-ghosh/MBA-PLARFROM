@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from googleapiclient.errors import HttpError
 
-from .drive_utils import upload_file_to_drive
+from .drive_utils import resolve_type_variant_folder, upload_file_to_drive
 from .models import Dataset
 
 logger = logging.getLogger(__name__)
@@ -18,23 +18,29 @@ def admin_panel_view(request):
         messages.error(request, "You don't have permission to access the admin panel.")
         return redirect('dashboard')
 
+    datasets = Dataset.objects.order_by('file_type', 'variant', '-uploaded_at')
+    existing_types = Dataset.objects.values_list('file_type', flat=True).distinct()
+    existing_variants = Dataset.objects.values_list('variant', flat=True).distinct()
+
     if request.method == 'POST':
         uploaded_file = request.FILES.get('file')
-        name = request.POST.get('name', '').strip()
-        category = request.POST.get('category', '').strip()
+        file_type = request.POST.get('file_type', '').strip()
+        variant = request.POST.get('variant', '').strip()
         description = request.POST.get('description', '').strip()
 
-        if not name or not category or uploaded_file is None:
+        if not file_type or not variant or uploaded_file is None:
             messages.error(
                 request,
-                'Upload failed: name, category and a file are all required.',
+                'Upload failed: type, variant and a file are all required.',
             )
         else:
             try:
+                folder_id = resolve_type_variant_folder(file_type, variant)
                 drive_file = upload_file_to_drive(
                     uploaded_file.file,
                     uploaded_file.name,
                     uploaded_file.content_type or 'application/octet-stream',
+                    folder_id,
                 )
             except HttpError as exc:
                 print(traceback.format_exc())
@@ -57,21 +63,26 @@ def admin_panel_view(request):
                 )
             else:
                 Dataset.objects.create(
-                    name=name,
-                    category=category,
+                    file_type=file_type,
+                    variant=variant,
                     description=description,
                     drive_file_id=drive_file['id'],
                     drive_file_name=drive_file['name'],
+                    drive_folder_id=folder_id,
                     uploaded_by=request.user,
                 )
-                messages.success(request, f'"{name}" uploaded successfully.')
+                messages.success(request, f'"{uploaded_file.name}" uploaded successfully.')
         return redirect('admin_panel')
 
-    datasets = Dataset.objects.order_by('-uploaded_at')
-    return render(request, 'datasets/admin_panel.html', {'datasets': datasets})
+    context = {
+        'datasets': datasets,
+        'existing_types': existing_types,
+        'existing_variants': existing_variants,
+    }
+    return render(request, 'datasets/admin_panel.html', context)
 
 
 @login_required
 def dataset_list_view(request):
-    datasets = Dataset.objects.order_by('-uploaded_at')
+    datasets = Dataset.objects.order_by('file_type', 'variant', '-uploaded_at')
     return render(request, 'datasets/dataset_list.html', {'datasets': datasets})

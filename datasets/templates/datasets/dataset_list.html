@@ -6,23 +6,30 @@
 {% block content %}
 <p class="welcome-text mb-4">Reference datasets managed by the admin team. Metadata only — no download links are available here.</p>
 
-<div class="row g-4">
-    {% for dataset in datasets %}
-    <div class="col-md-6 col-xl-4">
-        <div class="feature-card h-100">
-            <div class="card-icon"><i class="bi bi-database"></i></div>
-            <h5>{{ dataset.name }}</h5>
-            <p class="mb-2"><span class="category-chip">{{ dataset.category }}</span></p>
-            <p class="dataset-desc">{{ dataset.description|default:"No description provided." }}</p>
-            <p class="dataset-meta">Published {{ dataset.uploaded_at|date:"M j, Y" }}</p>
+{% regroup datasets by file_type as type_groups %}
+{% for type_group in type_groups %}
+<h5 class="mt-4 mb-3">{{ type_group.grouper }}</h5>
+    {% regroup type_group.list by variant as variant_groups %}
+    {% for variant_group in variant_groups %}
+    <h6 class="text-muted mb-2">{{ variant_group.grouper }}</h6>
+    <div class="row g-4 mb-3">
+        {% for dataset in variant_group.list %}
+        <div class="col-md-6 col-xl-4">
+            <div class="feature-card h-100">
+                <div class="card-icon"><i class="bi bi-database"></i></div>
+                <h5>{{ dataset.drive_file_name }}</h5>
+                <p class="dataset-desc">{{ dataset.description|default:"No description provided." }}</p>
+                <p class="dataset-meta">Published {{ dataset.uploaded_at|date:"M j, Y" }}</p>
+            </div>
         </div>
-    </div>
-    {% empty %}
-    <div class="col-12">
-        <div class="panel-card">
-            <p class="empty-state mb-0">No datasets published yet.</p>
-        </div>
+        {% endfor %}
     </div>
     {% endfor %}
+{% empty %}
+<div class="col-12">
+    <div class="panel-card">
+        <p class="empty-state mb-0">No datasets published yet.</p>
+    </div>
 </div>
+{% endfor %}
 {% endblock %}

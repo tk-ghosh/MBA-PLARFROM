@@ -1,5 +1,4 @@
 import io
-import json
 
 from django.conf import settings
 from google.auth.transport.requests import Request
@@ -16,17 +15,42 @@ def get_drive_service():
     )
     if creds.expired and creds.refresh_token:
         creds.refresh(Request())
-        # persist the refreshed token back to disk
         with open(settings.GOOGLE_DRIVE_TOKEN_FILE, 'w') as f:
             f.write(creds.to_json())
     return build('drive', 'v3', credentials=creds)
 
 
-def upload_file_to_drive(file_obj, filename, mimetype):
+def find_or_create_folder(service, folder_name, parent_id):
+    safe_name = folder_name.replace("'", "\\'")
+    query = (
+        f"name = '{safe_name}' and '{parent_id}' in parents "
+        "and mimeType = 'application/vnd.google-apps.folder' and trashed = false"
+    )
+    results = service.files().list(q=query, fields='files(id, name)').execute()
+    files = results.get('files', [])
+    if files:
+        return files[0]['id']
+    folder_metadata = {
+        'name': folder_name,
+        'mimeType': 'application/vnd.google-apps.folder',
+        'parents': [parent_id],
+    }
+    created = service.files().create(body=folder_metadata, fields='id').execute()
+    return created['id']
+
+
+def resolve_type_variant_folder(file_type, variant):
+    service = get_drive_service()
+    type_folder_id = find_or_create_folder(service, file_type, settings.GOOGLE_DRIVE_FOLDER_ID)
+    variant_folder_id = find_or_create_folder(service, variant, type_folder_id)
+    return variant_folder_id
+
+
+def upload_file_to_drive(file_obj, filename, mimetype, parent_folder_id):
     service = get_drive_service()
     file_metadata = {
         'name': filename,
-        'parents': [settings.GOOGLE_DRIVE_FOLDER_ID],
+        'parents': [parent_folder_id],
     }
     media = MediaIoBaseUpload(file_obj, mimetype=mimetype, resumable=True)
     uploaded = service.files().create(

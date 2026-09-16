@@ -26,8 +26,16 @@
                     <label for="dataset">Existing Dataset (from Google Drive)</label>
                     <select id="dataset" name="dataset" class="converter-select">
                         <option value="">— Select a dataset —</option>
-                        {% for dataset in datasets %}
-                        <option value="{{ dataset.id }}">{{ dataset.name }} ({{ dataset.category }})</option>
+                        {% regroup datasets by file_type as type_groups %}
+                        {% for type_group in type_groups %}
+                        <optgroup label="{{ type_group.grouper }}">
+                            {% regroup type_group.list by variant as variant_groups %}
+                            {% for variant_group in variant_groups %}
+                            {% for dataset in variant_group.list %}
+                            <option value="{{ dataset.id }}">{{ dataset.drive_file_name }} ({{ variant_group.grouper }})</option>
+                            {% endfor %}
+                            {% endfor %}
+                        </optgroup>
                         {% endfor %}
                     </select>
                 </div>
@@ -166,13 +174,18 @@
                 return;
             }
 
-            var cat = document.createElement('span');
-            cat.className = 'category-chip';
-            cat.textContent = d.category;
+            var typeChip = document.createElement('span');
+            typeChip.className = 'category-chip';
+            typeChip.textContent = d.file_type;
+
+            var varChip = document.createElement('span');
+            varChip.className = 'category-chip';
+            varChip.textContent = d.variant;
 
             panel.textContent = '';
             panel.appendChild(detailRow('Name', d.name));
-            panel.appendChild(detailRow('Category', null, cat));
+            panel.appendChild(detailRow('Type', null, typeChip));
+            panel.appendChild(detailRow('Variant', null, varChip));
             panel.appendChild(detailRow('Description', d.description || 'No description provided.'));
             panel.className = 'detail-body';
 
