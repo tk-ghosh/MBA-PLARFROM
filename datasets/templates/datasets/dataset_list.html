@@ -1,0 +1,28 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Datasets | MBA Platform{% endblock %}
+{% block page_title %}Datasets{% endblock %}
+
+{% block content %}
+<p class="welcome-text mb-4">Reference datasets managed by the admin team. Metadata only — no download links are available here.</p>
+
+<div class="row g-4">
+    {% for dataset in datasets %}
+    <div class="col-md-6 col-xl-4">
+        <div class="feature-card h-100">
+            <div class="card-icon"><i class="bi bi-database"></i></div>
+            <h5>{{ dataset.name }}</h5>
+            <p class="mb-2"><span class="category-chip">{{ dataset.category }}</span></p>
+            <p class="dataset-desc">{{ dataset.description|default:"No description provided." }}</p>
+            <p class="dataset-meta">Published {{ dataset.uploaded_at|date:"M j, Y" }}</p>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="panel-card">
+            <p class="empty-state mb-0">No datasets published yet.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

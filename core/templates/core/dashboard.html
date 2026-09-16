@@ -1,0 +1,40 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard | MBA Platform{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<p class="welcome-text mb-4">Welcome back, {{ request.user.get_username }}. Pick a module to get started.</p>
+
+<div class="row g-4">
+    <div class="col-md-6 col-xl-3">
+        <div class="feature-card h-100" style="animation-delay: 0.1s;">
+            <div class="card-icon"><i class="bi bi-bullseye"></i></div>
+            <h5>Spot Allocation</h5>
+            <p>Plan and assign broadcast &amp; cable spot schedules across buys.</p>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="feature-card h-100" style="animation-delay: 0.2s;">
+            <div class="card-icon"><i class="bi bi-graph-up-arrow"></i></div>
+            <h5>Reach &amp; Frequency Plan</h5>
+            <p>Model campaign reach and frequency to hit your GRP goals.</p>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <a href="{% url 'upload_converter' %}" class="feature-card d-block h-100 text-decoration-none" style="animation-delay: 0.3s;">
+            <div class="card-icon"><i class="bi bi-arrow-repeat"></i></div>
+            <h5>Upload Converter</h5>
+            <p>Convert vendor media files into clean, platform-ready data.</p>
+        </a>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="feature-card h-100" style="animation-delay: 0.4s;">
+            <div class="card-icon"><i class="bi bi-briefcase"></i></div>
+            <h5>Client Deals</h5>
+            <p>Track client-specific rate deals and negotiated pricing.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

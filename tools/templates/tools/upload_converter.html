@@ -1,0 +1,201 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Upload Converter | MBA Platform{% endblock %}
+{% block page_title %}Upload Converter{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="panel-card form-compact">
+            <h5 class="panel-card-title">Upload Converter</h5>
+            <p class="panel-card-sub">Convert a TV Plan file into the system upload format.</p>
+
+            {% if error %}
+            <div class="alert-banner alert-error mb-3" role="alert">
+                {{ error }}
+                <button type="button" class="alert-close" aria-label="Dismiss">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data" action="{% url 'upload_converter' %}" target="_self">
+                {% csrf_token %}
+
+                <div class="field">
+                    <label for="dataset">Existing Dataset (from Google Drive)</label>
+                    <select id="dataset" name="dataset" class="converter-select">
+                        <option value="">— Select a dataset —</option>
+                        {% for dataset in datasets %}
+                        <option value="{{ dataset.id }}">{{ dataset.name }} ({{ dataset.category }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="or-divider"><span>OR</span></div>
+
+                <div class="field">
+                    <label for="file">Upload a file directly</label>
+                    <input type="file" id="file" name="file" accept=".xlsx">
+                    <small class="field-hint">A one-off TV Plan .xlsx used only for this conversion and discarded afterwards.</small>
+                </div>
+
+                <div class="row g-2 campaign-fields">
+                    <div class="col-md-6">
+                        <div class="field">
+                            <label for="brand_name">Brand name</label>
+                            <input type="text" id="brand_name" name="brand_name" value="PA CBHO" placeholder="e.g. PA CBHO">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="field">
+                            <label for="discount_rate">Discount rate (%)</label>
+                            <input type="number" id="discount_rate" name="discount_rate" value="15" step="any" min="0">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="field">
+                            <label for="media_ac">Media A/C (%)</label>
+                            <input type="number" id="media_ac" name="media_ac" value="2" step="any" min="0">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="field">
+                            <label for="vat_rate">VAT rate (%)</label>
+                            <input type="number" id="vat_rate" name="vat_rate" value="15" step="any" min="0">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="field">
+                            <label for="io_number">IO number</label>
+                            <input type="number" id="io_number" name="io_number" value="82009537">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="field">
+                            <label for="output_filename">Output file name</label>
+                            <input type="text" id="output_filename" name="output_filename" placeholder="e.g. PA_Upload_Sep26">
+                            <small class="field-hint">Optional — leave blank for an auto-generated name.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-accent" id="convertBtn">Generate</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="panel-card detail-panel">
+            <h5 class="panel-card-title" id="detailPanelTitle">Dataset details</h5>
+
+            {% if result %}
+            <div id="resultBlock">
+                {% if result.is_match %}
+                <div class="alert-banner alert-success mb-3" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    Spot counts match — {{ result.generated_total }} spots in both the plan and the generated file.
+                </div>
+                {% else %}
+                <div class="alert-banner alert-warning mb-3" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Mismatch — plan file shows {{ result.plan_total }} total spots, but the generated output has {{ result.generated_total }}. Please review the source file before using this output.
+                </div>
+                {% endif %}
+
+                <a href="{% url 'download_generated_file' token=result.download_token %}" class="btn-accent d-flex align-items-center justify-content-center gap-2 mb-2">
+                    <i class="bi bi-download"></i> Download file
+                </a>
+                <a href="{% url 'upload_converter' %}" class="btn-logout d-flex align-items-center justify-content-center gap-2">
+                    <i class="bi bi-arrow-repeat"></i> Generate another
+                </a>
+            </div>
+            {% endif %}
+
+            <div id="datasetDetails" class="detail-body placeholder-detail">Select a dataset to see its details here</div>
+        </div>
+    </div>
+</div>
+
+{{ datasets_json|json_script:"datasets-data" }}
+
+<script>
+    (function () {
+        var form = document.querySelector('form');
+        var btn = document.getElementById('convertBtn');
+        if (form && btn) {
+            form.addEventListener('submit', function () {
+                btn.disabled = true;
+                btn.textContent = 'Generating…';
+            });
+        }
+
+        var select = document.getElementById('dataset');
+        var panel = document.getElementById('datasetDetails');
+        var resultBlock = document.getElementById('resultBlock');
+        var title = document.getElementById('detailPanelTitle');
+        var dataScript = document.getElementById('datasets-data');
+        var data = dataScript ? JSON.parse(dataScript.textContent) : {};
+        if (!select || !panel) return;
+
+        function detailRow(labelText, valueText, chipNode) {
+            var rowDiv = document.createElement('div');
+            rowDiv.className = 'dataset-detail-row';
+
+            var label = document.createElement('span');
+            label.className = 'dataset-detail-label';
+            label.textContent = labelText;
+            rowDiv.appendChild(label);
+
+            var value = document.createElement('span');
+            value.className = 'dataset-detail-value';
+            if (chipNode) {
+                value.appendChild(chipNode);
+            } else {
+                value.textContent = valueText;
+            }
+            rowDiv.appendChild(value);
+            return rowDiv;
+        }
+
+        function renderDetail(id) {
+            var d = data[id];
+            if (!d) {
+                panel.className = 'detail-body placeholder-detail';
+                panel.textContent = 'Select a dataset to see its details here';
+                return;
+            }
+
+            var cat = document.createElement('span');
+            cat.className = 'category-chip';
+            cat.textContent = d.category;
+
+            panel.textContent = '';
+            panel.appendChild(detailRow('Name', d.name));
+            panel.appendChild(detailRow('Category', null, cat));
+            panel.appendChild(detailRow('Description', d.description || 'No description provided.'));
+            panel.className = 'detail-body';
+
+            panel.classList.remove('detail-fade');
+            void panel.offsetWidth;
+            panel.classList.add('detail-fade');
+        }
+
+        function showDetails(id) {
+            if (resultBlock) resultBlock.style.display = 'none';
+            panel.style.display = '';
+            if (title) title.textContent = 'Dataset details';
+            renderDetail(id);
+        }
+
+        if (resultBlock) {
+            panel.style.display = 'none';
+            if (title) title.textContent = 'Conversion result';
+        }
+
+        select.addEventListener('change', function () {
+            showDetails(select.value);
+        });
+    })();
+</script>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in | MBA Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'core/css/login.css' %}?v=2">
+</head>
+<body>
+<div class="screen">
+  <div class="left">
+    <div class="brand">
+      <span class="brand-mark">MBA Platform</span>
+      <span class="on-air"><span class="on-air-dot"></span>on air</span>
+    </div>
+    <h1 class="headline">Sign in to plan your next campaign</h1>
+    {% if form.errors %}
+    <div class="error show" id="loginError">Username or password didn't match. Try again.</div>
+    {% endif %}
+    <form id="loginForm" method="post" action="{% url 'login' %}">
+      {% csrf_token %}
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="e.g. tutul.ghosh" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="input-wrap">
+          <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
+          <button type="button" class="toggle-pass" id="togglePass">show</button>
+        </div>
+      </div>
+      <div class="row-between">
+        <label class="remember"><input type="checkbox" name="remember"> Remember me</label>
+        <a href="#">Forgot password?</a>
+      </div>
+      <button type="submit" class="submit" id="submitBtn">Sign in</button>
+    </form>
+    <p class="footnote">MBA Platform · internal use for the planning team</p>
+  </div>
+  <div class="right">
+    <div class="ticks" id="ticks"></div>
+    <div class="waveform" id="waveform"></div>
+    <div class="right-copy">
+      <h2>Every spot, on schedule.</h2>
+      <p>Turn budget, GRP, and CPRP targets into a finished broadcast plan — then track it from first air date to last.</p>
+    </div>
+  </div>
+</div>
+<script src="{% static 'core/js/login.js' %}"></script>
+</body>
+</html>

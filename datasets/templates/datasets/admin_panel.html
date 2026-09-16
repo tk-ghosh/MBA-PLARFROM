@@ -1,0 +1,66 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Admin Panel | MBA Platform{% endblock %}
+{% block page_title %}Admin Panel{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="panel-card">
+            <h5 class="panel-card-title">Upload Dataset</h5>
+            <p class="panel-card-sub">Files upload straight to Google Drive — nothing is stored on the server.</p>
+            <form method="post" enctype="multipart/form-data" action="{% url 'admin_panel' %}">
+                {% csrf_token %}
+                <div class="field">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name" placeholder="e.g. 2026 Q3 Rate Card" required>
+                </div>
+                <div class="field">
+                    <label for="category">Category</label>
+                    <input type="text" id="category" name="category" placeholder="e.g. Rate Card, Channel List, Brand List" required>
+                </div>
+                <div class="field">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" rows="3" placeholder="Optional notes"></textarea>
+                </div>
+                <div class="field">
+                    <label for="file">File</label>
+                    <input type="file" id="file" name="file" required>
+                </div>
+                <button type="submit" class="btn-accent">Upload to Drive</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="panel-card">
+            <h5 class="panel-card-title">Uploaded Datasets</h5>
+            <div class="table-responsive">
+                <table class="table table-data">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Uploaded by</th>
+                            <th>Uploaded at</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dataset in datasets %}
+                        <tr>
+                            <td>{{ dataset.name }}</td>
+                            <td>{{ dataset.category }}</td>
+                            <td>{{ dataset.uploaded_by.get_username|default:"&mdash;" }}</td>
+                            <td>{{ dataset.uploaded_at|date:"M j, Y, g:i a" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="empty-state">No datasets uploaded yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
